@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "firstName": "Mark",
+      "lastName": "Zuckerberg",
+      "isCeo": true,
+      "age": 38
+    },
+    {
+      "firstName": "Steve",
+      "lastName": "Jobs",
+      "isCeo": true,
+      "age": 50
+    },
+    {
+      "firstName": "Bill",
+      "lastName": "Gates",
+      "isCeo": true,
+      "age": 70
+    }
+  ]
+}
