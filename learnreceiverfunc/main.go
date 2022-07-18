@@ -2,36 +2,37 @@ package main
 
 import "fmt"
 
-type Person struct {
-	FirstName string
-	LastName  string
-	Age       int
+type Car struct {
+	Manufacture string
+	Type        string
+	Fuel        int
+	CC          int
 }
 
-func (p Person) Greetings() {
-	fmt.Println("Hallo nama saya", p.FirstName, p.LastName, "umur saya", p.Age)
+func (c *Car) FlushFuel() {
+	c.Fuel = 0
 }
 
-func (p *Person) SetFirstName(firstName string) {
-	p.FirstName = firstName
+func (c *Car) FillFuel() {
+	c.Fuel = 1
 }
 
-func (p *Person) Modify() {
-	fmt.Println("Hallo nama saya", p.FirstName, p.LastName, "umur saya", p.Age)
+func (c Car) Moving() {
+	if c.Fuel == 0 {
+		fmt.Println("Can't move fuel is empty")
+	} else {
+		fmt.Println("This car", c.Manufacture, "is moving")
+	}
 }
 
 func main() {
-	// initialization
-	person1 := Person{
-		FirstName: "Udin",
-		LastName:  "Ganteng",
-		Age:       28,
+	car1 := Car{
+		Manufacture: "BMW",
+		Type:        "Sport",
+		Fuel:        1,
+		CC:          500,
 	}
-
-	// memanggil receiver function dari person1 yang type nya Person
-	person1.Greetings()
-
-	// mengubah FirstName person1 menjadi Mark lewat receiver function dengan pointer
-	person1.SetFirstName("Mark")
-	person1.Greetings()
+	car1.FlushFuel()
+	car1.FillFuel()
+	car1.Moving()
 }

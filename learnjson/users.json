@@ -1,6 +1,12 @@
 {
   "users": [
     {
+      "firstName": "Bill",
+      "lastName": "Gates",
+      "isCeo": true,
+      "age": 70
+    },
+    {
       "firstName": "Mark",
       "lastName": "Zuckerberg",
       "isCeo": true,
@@ -11,12 +17,6 @@
       "lastName": "Jobs",
       "isCeo": true,
       "age": 50
-    },
-    {
-      "firstName": "Bill",
-      "lastName": "Gates",
-      "isCeo": true,
-      "age": 70
     }
   ]
 }

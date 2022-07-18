@@ -10,26 +10,26 @@ import (
 func main() {
 	// JSON
 	// JavaScript Object Notation
-	// Digunakan sebagai format pertukaran antara backend dan frontend
+	// Format pertukaran data antara backend to backend atau backend to frontend
+	// Paling populer digunakan saat ini
 
-	// contoh nge get data dari server
+	// Contoh seolah2 data didapat dari server
 	jsonByte, err := ioutil.ReadFile("/home/xoxo/Documents/Go/src/github.com/nightsilvertech/lectures/learnjson/users.json")
 	if err != nil {
-		fmt.Println("Error file tidak ketemu, detail", err)
+		fmt.Println("error while opening json file, detail", err)
 	}
 
-	// unmarshal : convert data json ke dalam struct
+	// Unmarshal : gunanya mengkonversi data json []byte ke dalam struct
 	var users jsonModel.DataUsers
 	err = json.Unmarshal(jsonByte, &users)
 	if err != nil {
-		fmt.Println("Gagal binding ke struct, detail", err)
+		fmt.Println("error while unmarshal json data, detail", err)
 	}
-	fmt.Println("Unmarshal", users)
 
-	// marshal : convert struct ke dalam data json
-	jsonData, err := json.Marshal(users)
+	// Marshal : gunanya mengkonversi struct ke dalam json []byte dan di konvert ke string juga
+	jsonByteData, err := json.Marshal(users)
 	if err != nil {
-		fmt.Println("Gagal binding ke json, detail", err)
+		fmt.Println("error while marshal json data, detail", err)
 	}
-	fmt.Println("Marshal", string(jsonData))
+	fmt.Println(string(jsonByteData))
 }
