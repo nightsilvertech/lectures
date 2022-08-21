@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"net/http"
 )
 
@@ -20,9 +21,31 @@ type GreetingsQueryParams struct {
 	Email string `form:"email" binding:"required"`
 }
 
+//func BasicAuth() gin.HandlerFunc {
+//	return func(context *gin.Context) {
+//		data := context.GetHeader("Authorization")
+//
+//		split := strings.Split(data, ":")
+//		username := split[0]
+//		password := split[1]
+//
+//		fmt.Println(username, password)
+//		context.Next()
+//	}
+//}
+
+func RequestIDGenerator() gin.HandlerFunc {
+	return func(context *gin.Context) {
+		requestId := uuid.New().String()
+		context.Set("RequestID", requestId)
+		context.Next()
+	}
+}
+
 func main() {
 	// gin web framework initialization
 	r := gin.New()
+	r.Use(RequestIDGenerator())
 
 	// request
 	// - body (data data yang akan di berikan ke dalam request dan di prosess oleh backend)
@@ -61,10 +84,15 @@ func main() {
 			return
 		}
 
+		// get request id from context
+		requestId, _ := context.Get("RequestID")
+		stringRequestId := requestId.(string)
+
 		context.JSON(http.StatusOK, gin.H{
-			"query":  greetingQueryParam,
-			"data":   greetingRequest,
-			"header": greetingHeader,
+			"requestId": stringRequestId,
+			"query":     greetingQueryParam,
+			"data":      greetingRequest,
+			"header":    greetingHeader,
 		})
 		return
 	})
