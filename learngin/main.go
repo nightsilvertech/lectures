@@ -1,9 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
+	"strings"
+	"time"
 )
 
 type GreetingsRequest struct {
@@ -11,35 +15,71 @@ type GreetingsRequest struct {
 	Age  int64  `json:"age" binding:"required"`
 }
 
-type GreetingsHeader struct {
-	APIKey    string `header:"API-KEY" binding:"required"`
-	ClientKey string `header:"CLIENT-KEY" binding:"required"`
-	RequestID string `header:"REQUEST-ID" binding:"required"`
-}
-
-type GreetingsQueryParams struct {
-	Email string `form:"email" binding:"required"`
-}
-
-//func BasicAuth() gin.HandlerFunc {
-//	return func(context *gin.Context) {
-//		data := context.GetHeader("Authorization")
-//
-//		split := strings.Split(data, ":")
-//		username := split[0]
-//		password := split[1]
-//
-//		fmt.Println(username, password)
-//		context.Next()
-//	}
-//}
-
 func RequestIDGenerator() gin.HandlerFunc {
 	return func(context *gin.Context) {
 		requestId := uuid.New().String()
 		context.Set("RequestID", requestId)
 		context.Next()
 	}
+}
+
+func Authentication(username string) gin.HandlerFunc {
+	return func(context *gin.Context) {
+		authHeader := context.GetHeader("Authorization")
+
+		dataHeaders := strings.Split(authHeader, " ")
+		jwtToken := dataHeaders[1]
+
+		token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+			}
+			return []byte(secretKey), nil
+		})
+		if err != nil {
+			context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			usernameClaims := claims["username"]
+			if usernameClaims == username {
+				context.Next()
+			} else {
+				context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+					"message": "username not recognized",
+				})
+				return
+			}
+		} else {
+			context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"message": "error casting claims",
+			})
+			return
+		}
+	}
+}
+
+// JWT - Json Web Token
+// Guna nya : checking authentication
+// signing token bahwa token tersebut di generate oleh backend dan tidak bisa di generate secara sembarangan
+// jwt punya umur
+
+const secretKey = `ABCD1234`
+
+func GenerateJWT(username string) (string, error) {
+	claims := jwt.MapClaims{}
+	claims["username"] = username
+	claims["exp"] = time.Now().Add(time.Minute * 5).Unix()
+	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	token, err := jwtToken.SignedString([]byte(secretKey))
+	if err != nil {
+		return "", err
+	}
+	return token, nil
 }
 
 func main() {
@@ -51,48 +91,33 @@ func main() {
 	// - body (data data yang akan di berikan ke dalam request dan di prosess oleh backend)
 	// - query param (data juga yang di berikan ke dalam request tetapi lewat query url)
 	// - header (data tambahan yang di gunakan oleh backend untuk kebutuhan authentication dan formating)
-
-	// handler creation for handling request to specific endpoint
-	r.POST("/greetings", func(context *gin.Context) {
-		// query
-		var greetingQueryParam GreetingsQueryParams
-		err := context.ShouldBindQuery(&greetingQueryParam)
+	r.POST("/login", func(context *gin.Context) {
+		token, err := GenerateJWT("isawk")
 		if err != nil {
 			context.JSON(http.StatusBadRequest, gin.H{
 				"message": err.Error(),
 			})
 			return
 		}
-
-		// body
-		var greetingRequest GreetingsRequest
-		err = context.ShouldBindJSON(&greetingRequest)
-		if err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{
-				"message": err.Error(),
-			})
-			return
-		}
-
-		// header
-		var greetingHeader GreetingsHeader
-		err = context.ShouldBindHeader(&greetingHeader)
-		if err != nil {
-			context.JSON(http.StatusBadRequest, gin.H{
-				"message": err.Error(),
-			})
-			return
-		}
-
-		// get request id from context
-		requestId, _ := context.Get("RequestID")
-		stringRequestId := requestId.(string)
 
 		context.JSON(http.StatusOK, gin.H{
-			"requestId": stringRequestId,
-			"query":     greetingQueryParam,
-			"data":      greetingRequest,
-			"header":    greetingHeader,
+			"token": token,
+		})
+		return
+	})
+
+	r.POST("/greetings", Authentication("isawk"), func(context *gin.Context) {
+		var greetingsRequest GreetingsRequest
+		err := context.ShouldBindJSON(&greetingsRequest)
+		if err != nil {
+			context.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
+
+		context.JSON(http.StatusOK, gin.H{
+			"message": fmt.Sprintf("Hello %s, age is %d", greetingsRequest.Name, greetingsRequest.Age),
 		})
 		return
 	})
